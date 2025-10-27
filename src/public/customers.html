@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Quản lý khách hàng</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Khách hàng</h1>
+      <nav>
+        <a href="/index.html">Trang chủ</a>
+        <a href="/products.html">Sản phẩm</a>
+        <a href="/orders.html">Đơn hàng</a>
+        <a href="/stats.html">Thống kê</a>
+      </nav>
+    </header>
+
+    <div class="card">
+      <form id="addCustomerForm">
+        <input name="name" placeholder="Tên" required>
+        <input name="email" placeholder="Email" required>
+        <input name="phone" placeholder="SĐT" required>
+        <button class="btn" type="submit">Thêm</button>
+      </form>
+
+      <h3>Tìm kiếm và lọc khách hàng</h3>
+      <div style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;">
+        <div style="flex: 1; min-width: 200px;">
+          <input type="text" id="searchInput" placeholder="Tìm kiếm theo tên, email hoặc SĐT..." style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px;">
+        </div>
+        <div style="flex: 1; min-width: 120px;">
+          <select id="sortBy" style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px;">
+            <option value="id-desc">Mới nhất</option>
+            <option value="id-asc">Cũ nhất</option>
+            <option value="name-asc">Tên A-Z</option>
+            <option value="name-desc">Tên Z-A</option>
+            <option value="email-asc">Email A-Z</option>
+            <option value="email-desc">Email Z-A</option>
+          </select>
+        </div>
+        <div>
+          <button id="clearFilters" style="padding: 8px 16px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">
+            Xóa bộ lọc
+          </button>
+        </div>
+      </div>
+
+      <div id="searchResults" style="margin-bottom: 15px; font-size: 14px; color: #666;"></div>
+
+      <h3>Danh sách khách hàng</h3>
+      <div id="customerTableContainer" style="max-height: 500px; overflow-y: auto; border: 1px solid #e8d7d7; border-radius: 4px; scrollbar-width: thin; scrollbar-color: #dc3545 #f1f1f1;">
+        <table id="customerTable" style="width: 100%; margin: 0;">
+          <thead style="position: sticky; top: 0; background: #dc3545; color: white; z-index: 10;">
+            <tr>
+              <th style="padding: 12px 8px; text-align: left;">ID</th>
+              <th style="padding: 12px 8px; text-align: left;">Tên</th>
+              <th style="padding: 12px 8px; text-align: left;">Email</th>
+              <th style="padding: 12px 8px; text-align: left;">SĐT</th>
+              <th style="padding: 12px 8px; text-align: center;">Hành động</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      
+      <style>
+        #customerTableContainer::-webkit-scrollbar {
+          width: 6px;
+        }
+        #customerTableContainer::-webkit-scrollbar-track {
+          background: #f1f1f1;
+          border-radius: 3px;
+        }
+        #customerTableContainer::-webkit-scrollbar-thumb {
+          background: #dc3545;
+          border-radius: 3px;
+        }
+        #customerTableContainer::-webkit-scrollbar-thumb:hover {
+          background: #c82333;
+        }
+        
+        #customerTable tbody tr {
+          transition: background-color 0.2s;
+        }
+        
+        #customerTable tbody tr:hover {
+          background-color: #f8f9fa;
+        }
+        
+        #customerTable tbody tr:nth-child(even) {
+          background-color: #f8f9fa;
+        }
+        
+        #customerTable tbody tr:nth-child(even):hover {
+          background-color: #e9ecef;
+        }
+        
+        #customerTable tbody td {
+          padding: 10px 8px;
+          border-bottom: 1px solid #f0f0f0;
+        }
+      </style>
+    </div>
+
+    <script>
+      // Biến lưu trữ tất cả khách hàng
+      let allCustomers = [];
+      let filteredCustomers = [];
+
+      // Load tất cả khách hàng
+      async function loadAllCustomers() {
+        try {
+          const res = await fetch('/api/customers');
+          if (!res.ok) return alert('Lỗi khi tải khách hàng: ' + res.status);
+          allCustomers = await res.json();
+          filteredCustomers = [...allCustomers];
+          renderCustomers();
+          updateSearchResults();
+        } catch (err) {
+          console.error('Error loading customers:', err);
+        }
+      }
+
+      // Render khách hàng đã lọc
+      function renderCustomers() {
+        const tbody = document.querySelector('#customerTable tbody');
+        tbody.innerHTML = '';
+        
+        filteredCustomers.forEach(c => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${c.id}</td>
+            <td>${c.name}</td>
+            <td>${c.email || ''}</td>
+            <td>${c.phone || ''}</td>
+            <td><button class="btn secondary" data-id="${c.id}">Xóa</button></td>`;
+          tbody.appendChild(tr);
+        });
+        
+        // bind delete
+        document.querySelectorAll('#customerTable .btn.secondary').forEach(btn => {
+          btn.onclick = async () => {
+            const id = btn.getAttribute('data-id');
+            if (!confirm('Xóa khách hàng này?')) return;
+            const r = await fetch('/api/customers/' + id, { method: 'DELETE' });
+            if (!r.ok) return alert('Xóa thất bại');
+            loadAllCustomers(); // Reload tất cả khách hàng
+          };
+        });
+      }
+
+      // Cập nhật kết quả tìm kiếm
+      function updateSearchResults() {
+        const searchResults = document.getElementById('searchResults');
+        const searchInput = document.getElementById('searchInput');
+        
+        const searchTerm = searchInput.value.toLowerCase();
+        
+        let filtered = allCustomers;
+        
+        // Lọc theo tên, email hoặc SĐT
+        if (searchTerm) {
+          filtered = filtered.filter(c => 
+            c.name.toLowerCase().includes(searchTerm) ||
+            (c.email && c.email.toLowerCase().includes(searchTerm)) ||
+            (c.phone && c.phone.includes(searchTerm))
+          );
+        }
+        
+        // Sắp xếp
+        const sortBy = document.getElementById('sortBy').value;
+        filtered.sort((a, b) => {
+          switch (sortBy) {
+            case 'id-desc': return b.id - a.id;
+            case 'id-asc': return a.id - b.id;
+            case 'name-asc': return a.name.localeCompare(b.name);
+            case 'name-desc': return b.name.localeCompare(a.name);
+            case 'email-asc': return (a.email || '').localeCompare(b.email || '');
+            case 'email-desc': return (b.email || '').localeCompare(a.email || '');
+            default: return b.id - a.id;
+          }
+        });
+        
+        filteredCustomers = filtered;
+        renderCustomers();
+        
+        // Hiển thị kết quả
+        const total = allCustomers.length;
+        const found = filtered.length;
+        
+        if (searchTerm) {
+          searchResults.innerHTML = `Tìm thấy ${found}/${total} khách hàng`;
+        } else {
+          searchResults.innerHTML = `Tổng cộng ${total} khách hàng`;
+        }
+      }
+
+      // Event listeners cho tìm kiếm và lọc
+      document.addEventListener('DOMContentLoaded', () => {
+        loadAllCustomers();
+        
+        // Tìm kiếm
+        document.getElementById('searchInput').addEventListener('input', updateSearchResults);
+        
+        // Sắp xếp
+        document.getElementById('sortBy').addEventListener('change', updateSearchResults);
+        
+        // Xóa bộ lọc
+        document.getElementById('clearFilters').addEventListener('click', () => {
+          document.getElementById('searchInput').value = '';
+          document.getElementById('sortBy').value = 'id-desc';
+          updateSearchResults();
+        });
+      });
+
+      document.getElementById('addCustomerForm').onsubmit = async e => {
+        e.preventDefault();
+        const form = e.target;
+        const payload = { name: form.name.value, email: form.email.value, phone: form.phone.value };
+        const r = await fetch('/api/customers', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+        });
+        if (!r.ok) return alert('Tạo khách hàng thất bại');
+        form.reset();
+        loadAllCustomers(); // Reload tất cả khách hàng
+      };
+
+      // Cập nhật hàm loadCustomers cũ để tương thích
+      async function loadCustomers() {
+        await loadAllCustomers();
+      }
+    </script>
+  </div>
+</body>
+</html>

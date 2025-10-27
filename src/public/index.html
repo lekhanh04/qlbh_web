@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <title>Trang chủ - Quản lý bán hàng</title>
+  <link rel="stylesheet" href="/styles.css">
+  <style>
+    .user-info {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+    .user-name {
+      color: #333;
+      font-weight: 500;
+    }
+    .logout-btn {
+      background: #dc3545;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      text-decoration: none;
+      font-size: 14px;
+    }
+    .logout-btn:hover {
+      background: #c82333;
+    }
+    .loading {
+      text-align: center;
+      padding: 50px;
+      color: #666;
+    }
+    
+    .nav-vertical {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    
+    .btn-vertical {
+      display: block;
+      text-decoration: none;
+      background: white;
+      border: 2px solid #e1e5e9;
+      border-radius: 10px;
+      padding: 20px;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    .btn-vertical:hover {
+      border-color: #dc3545;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 20px rgba(220, 53, 69, 0.2);
+    }
+    
+    .btn-content {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    
+    .btn-icon {
+      font-size: 32px;
+      width: 50px;
+      text-align: center;
+    }
+    
+    .btn-text {
+      flex: 1;
+    }
+    
+    .btn-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 5px;
+    }
+    
+    .btn-desc {
+      font-size: 14px;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="user-info" id="userInfo" style="display: none;">
+      <span class="user-name" id="userName"></span>
+      <button class="logout-btn" onclick="logout()">Đăng xuất</button>
+    </div>
+    
+    <div id="loading" class="loading">
+      Đang kiểm tra đăng nhập...
+    </div>
+    
+    <div id="mainContent" style="display: none;">
+      <div style="text-align: center; margin-bottom: 40px;">
+        <div style="margin-bottom: 30px;">
+          <svg width="200" height="80" viewBox="0 0 200 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Background circle -->
+            <circle cx="100" cy="40" r="35" fill="#dc3545" opacity="0.1"/>
+            
+            <!-- PTIT Text -->
+            <text x="100" y="35" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="#dc3545" text-anchor="middle">PTIT</text>
+            
+            <!-- Star icon -->
+            <polygon points="100,45 102,50 107,50 103,53 104,58 100,55 96,58 97,53 93,50 98,50" fill="#ffd700"/>
+            
+            <!-- Book icon -->
+            <rect x="85" y="60" width="30" height="3" fill="#dc3545" rx="1"/>
+            <rect x="90" y="58" width="20" height="3" fill="#dc3545" rx="1"/>
+            
+            <!-- Website text -->
+            <text x="100" y="75" font-family="Arial, sans-serif" font-size="8" fill="#dc3545" text-anchor="middle">ptit.edu.vn</text>
+          </svg>
+        </div>
+        <h1>Hệ thống quản lý bán hàng</h1>
+        <p class="muted">Chọn chức năng để bắt đầu</p>
+      </div>
+      
+      <div class="nav-vertical">
+        <a class="btn btn-vertical" href="/products.html">
+          <div class="btn-content">
+            <div class="btn-icon">📦</div>
+            <div class="btn-text">
+              <div class="btn-title">Quản lý sản phẩm</div>
+              <div class="btn-desc">Thêm, sửa, xóa sản phẩm</div>
+            </div>
+          </div>
+        </a>
+        
+        <a class="btn btn-vertical" href="/customers.html">
+          <div class="btn-content">
+            <div class="btn-icon">👥</div>
+            <div class="btn-text">
+              <div class="btn-title">Quản lý khách hàng</div>
+              <div class="btn-desc">Thông tin khách hàng</div>
+            </div>
+          </div>
+        </a>
+        
+        <a class="btn btn-vertical" href="/orders.html">
+          <div class="btn-content">
+            <div class="btn-icon">🛒</div>
+            <div class="btn-text">
+              <div class="btn-title">Quản lý đơn hàng</div>
+              <div class="btn-desc">Tạo và quản lý hóa đơn</div>
+            </div>
+          </div>
+        </a>
+        
+        <a class="btn btn-vertical" href="/stats.html">
+          <div class="btn-content">
+            <div class="btn-icon">📊</div>
+            <div class="btn-text">
+              <div class="btn-title">Thống kê</div>
+              <div class="btn-desc">Báo cáo doanh thu</div>
+            </div>
+          </div>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    async function checkAuth() {
+      try {
+        const response = await fetch('/api/auth/check', {
+          credentials: 'include'
+        });
+        const data = await response.json();
+        
+        if (data.authenticated) {
+          document.getElementById('userName').textContent = data.admin.full_name;
+          document.getElementById('userInfo').style.display = 'flex';
+          document.getElementById('mainContent').style.display = 'block';
+          document.getElementById('loading').style.display = 'none';
+        } else {
+          window.location.href = '/login.html';
+        }
+      } catch (error) {
+        console.error('Auth check failed:', error);
+        window.location.href = '/login.html';
+      }
+    }
+    
+    async function logout() {
+      try {
+        await fetch('/api/auth/logout', {
+          method: 'POST',
+          credentials: 'include'
+        });
+        window.location.href = '/login.html';
+      } catch (error) {
+        console.error('Logout failed:', error);
+        window.location.href = '/login.html';
+      }
+    }
+    
+    // Kiểm tra đăng nhập khi trang load
+    checkAuth();
+  </script>
+</body>
+</html>
+

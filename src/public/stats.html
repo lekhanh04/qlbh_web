@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Thống kê</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Thống kê</h1>
+      <nav>
+        <a href="/index.html">Trang chủ</a>
+        <a href="/orders.html">Đơn hàng</a>
+        <a href="/products.html">Sản phẩm</a>
+      </nav>
+    </header>
+
+    <div class="card">
+      <h3>Doanh thu</h3>
+      <form id="revForm">
+        <input type="date" name="from">
+        <input type="date" name="to">
+        <select name="group">
+          <option value="day">Theo ngày</option>
+          <option value="month">Theo tháng</option>
+        </select>
+        <select id="revCustomer" name="customer_id"></select>
+        <select id="revProduct" name="product_id"></select>
+        <button class="btn" type="submit">Xem</button>
+      </form>
+      <table id="revTable">
+        <thead><tr><th>Khoảng</th><th>Doanh thu</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div class="card" style="margin-top:12px">
+      <h3>Sản phẩm bán chạy</h3>
+      <form id="topForm">
+        <input type="date" name="from">
+        <input type="date" name="to">
+        <input type="number" name="limit" value="5" min="1" max="50" style="width:90px">
+        <select id="topCustomer" name="customer_id"></select>
+        <button class="btn" type="submit">Xem</button>
+      </form>
+      <table id="topTable">
+        <thead><tr><th>Sản phẩm</th><th>Số lượng</th><th>Doanh thu</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <script>
+      const fmt = n => new Intl.NumberFormat('vi-VN').format(Number(n));
+      const $ = s => document.querySelector(s);
+
+      function drawBarChart(container, data, labelKey, valueKey) {
+        const max = Math.max(1, ...data.map(d => Number(d[valueKey] || 0)));
+        container.innerHTML = '';
+        data.forEach(d => {
+          const row = document.createElement('div');
+          row.style.display = 'flex';
+          row.style.alignItems = 'center';
+          row.style.gap = '8px';
+          const label = document.createElement('div');
+          label.style.width = '120px';
+          label.textContent = d[labelKey];
+          const barWrap = document.createElement('div');
+          barWrap.style.flex = '1';
+          barWrap.style.background = '#fff5f5';
+          barWrap.style.border = '1px solid #e8d7d7';
+          barWrap.style.borderRadius = '6px';
+          const bar = document.createElement('div');
+          bar.style.height = '12px';
+          bar.style.width = `${(Number(d[valueKey] || 0) / max) * 100}%`;
+          bar.style.background = 'var(--primary)';
+          bar.style.borderRadius = '6px';
+          barWrap.appendChild(bar);
+          const val = document.createElement('div');
+          val.style.width = '90px';
+          val.style.textAlign = 'right';
+          val.textContent = fmt(d[valueKey] || 0);
+          row.appendChild(label);
+          row.appendChild(barWrap);
+          row.appendChild(val);
+          container.appendChild(row);
+        });
+      }
+
+      document.getElementById('revForm').onsubmit = async e => {
+        e.preventDefault();
+        const p = new URLSearchParams(new FormData(e.target));
+        const r = await fetch('/api/stats/revenue?' + p.toString());
+        const data = await r.json();
+        const tb = document.querySelector('#revTable tbody');
+        tb.innerHTML = '';
+        data.forEach(row => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td>${row.period}</td><td>${fmt(row.revenue)}</td>`;
+          tb.appendChild(tr);
+        });
+        drawBarChart(createOrGet('#revChart'), data, 'period', 'revenue');
+      };
+
+      document.getElementById('topForm').onsubmit = async e => {
+        e.preventDefault();
+        const p = new URLSearchParams(new FormData(e.target));
+        const r = await fetch('/api/stats/top-products?' + p.toString());
+        const data = await r.json();
+        const tb = document.querySelector('#topTable tbody');
+        tb.innerHTML = '';
+        data.forEach(row => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td>${row.name}</td><td>${fmt(row.qty)}</td><td>${fmt(row.revenue)}</td>`;
+          tb.appendChild(tr);
+        });
+        drawBarChart(createOrGet('#topChart'), data.map(d => ({ label: d.name, value: d.qty })), 'label', 'value');
+      };
+
+      function createOrGet(sel) {
+        let el = document.querySelector(sel);
+        if (!el) {
+          el = document.createElement('div');
+          el.id = sel.slice(1);
+          el.style.padding = '8px 0';
+          if (sel === '#revChart') document.querySelector('#revTable').after(el);
+          if (sel === '#topChart') document.querySelector('#topTable').after(el);
+        }
+        return el;
+      }
+
+      async function loadFilters() {
+        try {
+          const [customers, products] = await Promise.all([
+            fetch('/api/customers').then(r => r.json()),
+            fetch('/api/products').then(r => r.json())
+          ]);
+          const addOptions = (sel, items, labelFn) => {
+            const s = document.querySelector(sel);
+            s.innerHTML = '<option value="">-- tất cả --</option>';
+            items.forEach(it => {
+              const opt = document.createElement('option');
+              opt.value = it.id;
+              opt.textContent = labelFn(it);
+              s.appendChild(opt);
+            });
+          };
+          addOptions('#revCustomer', customers, c => `${c.id} — ${c.name}`);
+          addOptions('#revProduct', products, p => `${p.id} — ${p.name}`);
+          addOptions('#topCustomer', customers, c => `${c.id} — ${c.name}`);
+        } catch (_) {}
+      }
+
+      loadFilters();
+      // load mặc định
+      document.getElementById('revForm').dispatchEvent(new Event('submit'));
+      document.getElementById('topForm').dispatchEvent(new Event('submit'));
+    </script>
+  </div>
+</body>
+</html>
+
+
