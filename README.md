@@ -7,16 +7,6 @@ MySQL: Máy chủ MySQL chạy (có thể dùng XAMPP, MySQL Workbench, hoặc D
 2. Biến môi trường (.env)
 Tạo file .env trong thư mục gốc với các biến sau (giá trị mặc định từ mã nguồn):
 
-DB_HOST=127.0.0.1.
-DB_PORT=3306.
-DB_USER=root.
-DB_PASSWORD=  # Để trống nếu không có mật khẩu.
-DB_NAME=shopdb.
-SESSION_SECRET=your-secret-key-change-in-production.
-PORT=3000  # Cho development; production dùng 10000 (từ render.yaml).
-NODE_ENV=development  # Hoặc production.
-Lưu ý: File .env không được commit vào Git để bảo mật.
-
 3. Cơ sở dữ liệu
 Tạo database: Chạy file sql/schema.sql để tạo database shopdb và các bảng (products, customers, orders, order_items, admins).
 Seed data: Chạy file sql/seed.sql để chèn dữ liệu mẫu (sản phẩm, khách hàng, admin mặc định với username: admin, password: admin123).
@@ -50,48 +40,12 @@ Uploads: Thư mục uploads/ cho file upload (sử dụng multer).
 
 Cấu trúc dự án
 
+<pre>
 d:/pj.csdl/
-├── .env                    # Biến môi trường (không commit).
-├── create-admin.js         # Script tạo admin.
-├── package.json            # Dependencies và scripts.
-├── package-lock.json       # Lock file cho npm.
-├── Procfile                # Cho Heroku-like deployment.
-├── render.yaml             # Cho Render deployment.
-├── sample-products.xlsx    # File mẫu sản phẩm.
-├── scripts/                # Scripts test.
-│   ├── testCreateOrder.js.
-│   └── testCreateOrderWithItems.js.
-├── sql/                    # SQL files.
-│   ├── schema.sql          # Tạo database và tables.
-│   └── seed.sql            # Dữ liệu mẫu.
-├── src/                    # Source code.
-│   ├── server.js           # Entry point Express server.
-│   ├── controllers/        # Business logic.
-│   │   ├── authController.js.
-│   │   ├── customerController.js.
-│   │   ├── customersController.js.
-│   │   ├── orderController.js.
-│   │   ├── ordersController.js.
-│   │   ├── productsController.js.
-│   │   └── statsController.js.
-│   ├── db/                 # Database connection.
-│   │   └── pool.js         # MySQL pool config.
-│   ├── public/             # Static frontend files.
-│   │   ├── app.js.
-│   │   ├── customers.html.
-│   │   ├── index.html.
-│   │   ├── login.html.
-│   │   ├── orders.html.
-│   │   ├── products.html.
-│   │   ├── stats.html.
-│   │   └── styles.css.
-│   └── routes/             # API routes.
-│       ├── auth.js.
-│       ├── customerRoutes.js.
-│       ├── customers.js.
-│       ├── orderRoutes.js.
-│       ├── orders.js.
-│       ├── products.js.
-│       └── stats.js.
-├── uploads/                # Thư mục upload files.
-└── node_modules/           # Dependencies (tạo sau npm install).
+├── .env
+├── package.json
+└── src/
+    ├── server.js
+    └── controllers/
+        └── authController.js
+</pre>
